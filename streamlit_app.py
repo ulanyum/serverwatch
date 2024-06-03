@@ -12,7 +12,7 @@ def humanize_time_difference(update_time):
 
     seconds = diff.total_seconds()
     if seconds < 60:
-        return f"{int(seconds)} sn önce "
+        return f"{int(seconds)} sn önce"
     elif seconds < 3600:
         minutes = seconds // 60
         return f"{int(minutes)} dk önce"
@@ -107,14 +107,29 @@ def update_data(servers):
     else:
         st.warning("No server data available.")
 
+def add_server():
+    with st.form("add_server_form"):
+        server_address = st.text_input("Enter server address")
+        submit_button = st.form_submit_button("Add Server")
+        if submit_button:
+            if server_address.strip():
+                servers.append(server_address.strip())
+            st.experimental_rerun()
+
 def main():
     st.title("ComfyUI Server Monitor")
 
-    # Sunucu listesini metin giriş alanından al
-    server_input = st.text_area("Enter server addresses (one per line)")
-    servers = [server.strip() for server in server_input.split("\n") if server.strip()]
+    # Sunucu listesini global değişken olarak tanımla
+    global servers
+    if 'servers' not in st.session_state:
+        st.session_state.servers = []
+    servers = st.session_state.servers
 
-    if st.button('Güncelle'):
+    # Sunucu ekleme butonunu görüntüle
+    if st.button("Add Server"):
+        add_server()
+
+    if st.button('Update'):
         update_data(servers)
 
     # İlk yükleme sırasında verileri güncelle
