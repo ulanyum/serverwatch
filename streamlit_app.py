@@ -5,6 +5,20 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 import time
+import os
+
+SERVERS_FILE = "servers.json"
+
+def load_servers():
+    if os.path.exists(SERVERS_FILE):
+        with open(SERVERS_FILE, "r") as file:
+            return json.load(file)
+    else:
+        return []
+
+def save_servers(servers):
+    with open(SERVERS_FILE, "w") as file:
+        json.dump(servers, file)
 
 def humanize_time_difference(update_time):
     now = datetime.now()
@@ -107,14 +121,34 @@ def update_data(servers):
     else:
         st.warning("No server data available.")
 
+def add_server():
+    with st.form("add_server_form"):
+        server_address = st.text_input("Enter server address")
+        submit_button = st.form_submit_button("Add Server")
+        if submit_button:
+            if server_address.strip():
+                servers = load_servers()
+                if server_address.strip() not in servers:
+                    servers.append(server_address.strip())
+                    save_servers(servers)
+            st.experimental_rerun()
+
 def main():
     st.title("ComfyUI Server Monitor")
 
-    # Sunucu listesini metin giriş alanından al
-    server_input = st.text_area("Enter server addresses (one per line)")
-    servers = [server.strip() for server in server_input.split("\n") if server.strip()]
+    # Sunucu listesini dosyadan yükle
+    servers = load_servers()
 
-    if st.button('Güncelle'):
+    # Sunucu ekleme butonunu görüntüle
+    add_server()
+
+    # Eklenen sunucuları görüntüle
+    if servers:
+        st.subheader("Added Servers")
+        for server in servers:
+            st.write(server)
+
+    if st.button('Update'):
         update_data(servers)
 
     # İlk yükleme sırasında verileri güncelle
