@@ -143,12 +143,6 @@ def main():
     # Sunucu ekleme butonunu görüntüle
     add_servers()
 
-    # Eklenen sunucuları görüntüle
-    if servers:
-        st.subheader("Added Servers")
-        for server in servers:
-            st.write(server)
-
     if st.button('Update'):
         update_data(servers)
 
