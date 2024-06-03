@@ -59,15 +59,4 @@ async def get_server_data(session, server):
             queue_running = len(queue_data["queue_running"])
             queue_pending = len(queue_data["queue_pending"])
             current_task = ""
-            if queue_running > 0 and "extra_pnginfo" in queue_data["queue_running"][0][2]:
-                current_task = queue_data["queue_running"][0][2]["extra_pnginfo"]["workflow"]["nodes"][-1]["widgets_values"][0]
-
-        # Sunucunun durumunu kontrol et
-        status = "🟢 Online" if resp.status == 200 else "🔴 Offline"
-
-        # Son güncelleme zamanını al
-        last_update = datetime.now()
-
-        return {
-            "server": server,
-            "vram_total":
+            if queue_running > 0 and
