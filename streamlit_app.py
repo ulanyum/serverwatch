@@ -79,7 +79,8 @@ async def get_all_server_data(servers):
         server_data = await asyncio.gather(*tasks)
         return [data for data in server_data if data is not None]
 
-def update_data(servers):
+def update_data():
+    servers = st.session_state.servers
     server_data = asyncio.run(get_all_server_data(servers))
 
     if len(server_data) > 0:
@@ -113,27 +114,31 @@ def add_server():
         submit_button = st.form_submit_button("Add Server")
         if submit_button:
             if server_address.strip():
-                servers.append(server_address.strip())
+                st.session_state.servers.append(server_address.strip())
             st.experimental_rerun()
 
 def main():
     st.title("ComfyUI Server Monitor")
 
-    # Sunucu listesini global değişken olarak tanımla
-    global servers
+    # Sunucu listesini session state'de sakla
     if 'servers' not in st.session_state:
         st.session_state.servers = []
-    servers = st.session_state.servers
 
     # Sunucu ekleme butonunu görüntüle
     if st.button("Add Server"):
         add_server()
 
+    # Eklenen sunucuları görüntüle
+    if st.session_state.servers:
+        st.subheader("Added Servers")
+        for server in st.session_state.servers:
+            st.write(server)
+
     if st.button('Update'):
-        update_data(servers)
+        update_data()
 
     # İlk yükleme sırasında verileri güncelle
-    update_data(servers)
+    update_data()
 
 if __name__ == "__main__":
     main()
