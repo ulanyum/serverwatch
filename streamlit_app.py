@@ -79,8 +79,7 @@ async def get_all_server_data(servers):
         server_data = await asyncio.gather(*tasks)
         return [data for data in server_data if data is not None]
 
-def update_data():
-    servers = st.session_state.servers
+def update_data(servers):
     server_data = asyncio.run(get_all_server_data(servers))
 
     if len(server_data) > 0:
@@ -135,10 +134,10 @@ def main():
             st.write(server)
 
     if st.button('Update'):
-        update_data()
+        update_data(st.session_state.servers)
 
     # İlk yükleme sırasında verileri güncelle
-    update_data()
+    update_data(st.session_state.servers)
 
 if __name__ == "__main__":
     main()
