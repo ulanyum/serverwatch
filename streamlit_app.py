@@ -107,37 +107,18 @@ def update_data(servers):
     else:
         st.warning("No server data available.")
 
-def add_server():
-    with st.form("add_server_form"):
-        server_address = st.text_input("Enter server address")
-        submit_button = st.form_submit_button("Add Server")
-        if submit_button:
-            if server_address.strip():
-                st.session_state.servers.append(server_address.strip())
-            st.experimental_rerun()
-
 def main():
     st.title("ComfyUI Server Monitor")
 
-    # Sunucu listesini session state'de sakla
-    if 'servers' not in st.session_state:
-        st.session_state.servers = []
+    # Sunucu listesini metin giriş alanından al
+    server_input = st.text_area("Enter server addresses (one per line)")
+    servers = [server.strip() for server in server_input.split("\n") if server.strip()]
 
-    # Sunucu ekleme butonunu görüntüle
-    if st.button("Add Server"):
-        add_server()
-
-    # Eklenen sunucuları görüntüle
-    if st.session_state.servers:
-        st.subheader("Added Servers")
-        for server in st.session_state.servers:
-            st.write(server)
-
-    if st.button('Update'):
-        update_data(st.session_state.servers)
+    if st.button('Güncelle'):
+        update_data(servers)
 
     # İlk yükleme sırasında verileri güncelle
-    update_data(st.session_state.servers)
+    update_data(servers)
 
 if __name__ == "__main__":
     main()
