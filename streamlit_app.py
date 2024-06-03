@@ -121,16 +121,16 @@ def update_data(servers):
     else:
         st.warning("No server data available.")
 
-def add_server():
+def add_servers():
     with st.form("add_server_form"):
-        server_address = st.text_input("Enter server address")
-        submit_button = st.form_submit_button("Add Server")
+        server_addresses = st.text_input("Enter server addresses (comma-separated)")
+        submit_button = st.form_submit_button("Add Servers")
         if submit_button:
-            if server_address.strip():
+            if server_addresses.strip():
                 servers = load_servers()
-                if server_address.strip() not in servers:
-                    servers.append(server_address.strip())
-                    save_servers(servers)
+                new_servers = [server.strip() for server in server_addresses.split(",") if server.strip()]
+                servers.extend(server for server in new_servers if server not in servers)
+                save_servers(servers)
             st.experimental_rerun()
 
 def main():
@@ -140,7 +140,7 @@ def main():
     servers = load_servers()
 
     # Sunucu ekleme butonunu görüntüle
-    add_server()
+    add_servers()
 
     # Eklenen sunucuları görüntüle
     if servers:
