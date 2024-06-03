@@ -93,4 +93,4 @@ async def get_all_server_data(servers):
         server_data = await asyncio.gather(*tasks)
         return [data for data in server_data if data is not None]
 
-def update_data
+def update_data )
