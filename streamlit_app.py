@@ -143,10 +143,7 @@ def main():
     # Sunucu ekleme butonunu görüntüle
     add_servers()
 
-    if st.button('Update'):
-        update_data(servers)
-
-    # İlk yükleme sırasında verileri güncelle
+    # Verileri güncelle
     update_data(servers)
 
 if __name__ == "__main__":
