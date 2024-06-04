@@ -68,7 +68,7 @@ async def get_server_data(session, server):
         status = "🟢 Online" if resp.status == 200 else "🔴 Offline"
 
         # Son güncelleme zamanını al
-        last_update = datetime.now()
+        last_update = datetime.fromtimestamp(stats_data["last_update"])
 
         return {
             "port": port,
@@ -84,7 +84,6 @@ async def get_server_data(session, server):
     except Exception as e:
         print(f"Error connecting to server {server}: {str(e)}")
         return None
-
 async def get_all_server_data(servers):
     async with aiohttp.ClientSession() as session:
         tasks = []
