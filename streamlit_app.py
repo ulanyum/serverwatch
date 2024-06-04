@@ -83,7 +83,7 @@ async def get_server_data(session, server):
     except Exception as e:
         print(f"Error connecting to server {server}: {str(e)}")
         return None
-
+        
 async def get_all_server_data(servers):
     async with aiohttp.ClientSession() as session:
         tasks = []
