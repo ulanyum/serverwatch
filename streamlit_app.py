@@ -141,12 +141,19 @@ def add_servers():
 def main():
     st.title("ComfyUI Server Monitor")
 
+    # Tablo için yer tutucu oluştur
+    table_placeholder = st.empty()
+
     # Sunucu ekleme butonunu görüntüle
     add_servers()
 
+    if st.button('Update'):
+        table_placeholder.empty()
+        update_data(table_placeholder)
+
     # Verileri belirli aralıklarla güncelle
     while True:
-        update_data()
+        update_data(table_placeholder)
         time.sleep(REFRESH_INTERVAL)
 
 if __name__ == "__main__":
