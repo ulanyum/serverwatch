@@ -140,17 +140,14 @@ def add_servers():
 def main():
     st.title("ComfyUI Server Monitor")
 
-    # Sunucu listesini dosyadan yükle
-    servers = load_servers()
-
     # Sunucu ekleme butonunu görüntüle
     add_servers()
 
     if st.button('Update'):
-        update_data(servers)
+        update_data()
 
     # İlk yükleme sırasında verileri güncelle
-    update_data(servers)
+    update_data()
 
 if __name__ == "__main__":
     main()
