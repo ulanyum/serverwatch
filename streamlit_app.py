@@ -122,6 +122,20 @@ def update_data():
     else:
         st.warning("No server data available.")
 
+def main():
+    st.title("ComfyUI Server Monitor")
+
+    # Sunucu ekleme butonunu görüntüle
+    add_servers()
+
+    if st.button('Update'):
+        update_data()
+
+    # Verileri belirli aralıklarla güncelle
+    while True:
+        update_data()
+        time.sleep(REFRESH_INTERVAL)
+
 def add_servers():
     if st.button("Add Server"):
         with st.form("add_server_form"):
