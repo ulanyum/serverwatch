@@ -8,7 +8,6 @@ import time
 import os
 
 SERVERS_FILE = "servers.json"
-REFRESH_INTERVAL = 15  # Veri güncelleme aralığı (saniye)
 
 def load_servers():
     if os.path.exists(SERVERS_FILE):
@@ -68,6 +67,9 @@ async def get_server_data(session, server):
         # Sunucunun durumunu kontrol et
         status = "🟢 Online" if resp.status == 200 else "🔴 Offline"
 
+        # Son güncelleme zamanını al
+        last_update = datetime.fromtimestamp(stats_data["last_update"])
+
         return {
             "port": port,
             "vram_total": vram_total,
@@ -76,13 +78,12 @@ async def get_server_data(session, server):
             "queue_pending": queue_pending,
             "current_task": current_task,
             "status": status,
-            "last_update": datetime.now(),
+            "last_update": last_update,
             "device_name": f"RTX {device_name}"
         }
     except Exception as e:
         print(f"Error connecting to server {server}: {str(e)}")
         return None
-
 async def get_all_server_data(servers):
     async with aiohttp.ClientSession() as session:
         tasks = []
@@ -122,20 +123,6 @@ def update_data():
     else:
         st.warning("No server data available.")
 
-def main():
-    st.title("ComfyUI Server Monitor")
-
-    # Sunucu ekleme butonunu görüntüle
-    add_servers()
-
-    if st.button('Update'):
-        update_data()
-
-    # Verileri belirli aralıklarla güncelle
-    while True:
-        update_data()
-        time.sleep(REFRESH_INTERVAL)
-
 def add_servers():
     if st.button("Add Server"):
         with st.form("add_server_form"):
@@ -158,10 +145,8 @@ def main():
     if st.button('Update'):
         update_data()
 
-    # Verileri belirli aralıklarla güncelle
-    while True:
-        update_data()
-        time.sleep(REFRESH_INTERVAL)
+    # İlk yükleme sırasında verileri güncelle
+    update_data()
 
 if __name__ == "__main__":
     main()
