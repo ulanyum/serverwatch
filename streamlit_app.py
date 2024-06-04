@@ -93,7 +93,7 @@ async def get_all_server_data(servers):
         server_data = await asyncio.gather(*tasks)
         return [data for data in server_data if data is not None]
 
-def update_data():
+def update_data(table_placeholder):
     # Sunucu listesini dosyadan yükle
     servers = load_servers()
 
@@ -118,11 +118,11 @@ def update_data():
         # Tablo başlıklarını belirle
         headers = ["Port", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Update", "Status"]
 
-        # Tabloyu görüntüle
-        st.table(pd.DataFrame(table_data, columns=headers))
+        # Tabloyu güncelle
+        table_placeholder.table(pd.DataFrame(table_data, columns=headers))
     else:
-        st.warning("No server data available.")
-
+        table_placeholder.warning("No server data available.")
+        
 def add_servers():
     if st.button("Add Server"):
         with st.form("add_server_form"):
