@@ -39,9 +39,6 @@ def humanize_time_difference(update_time):
 
 async def get_server_data(session, server):
     try:
-        # Port numarasını al
-        port = server.split(":")[-1]
-
         # /system_stats endpoint'inden veri al
         async with session.get(f"http://{server}/system_stats", ssl=False) as resp:
             stats_data = await resp.json()
@@ -54,6 +51,7 @@ async def get_server_data(session, server):
                 device_name = device_name_full.split("RXT")[1][:6].strip()
             else:
                 device_name = device_name_full
+            python_version = stats_data["system"]["python_version"].split(" ")[0]
 
         # /queue endpoint'inden veri al
         async with session.get(f"http://{server}/queue", ssl=False) as resp:
@@ -68,10 +66,10 @@ async def get_server_data(session, server):
         status = "🟢 Online" if resp.status == 200 else "🔴 Offline"
 
         # Son güncelleme zamanını al
-        last_update = datetime.fromtimestamp(stats_data["last_update"])
+        last_update = datetime.now()
 
         return {
-            "port": port,
+            "server": server,
             "vram_total": vram_total,
             "vram_free": vram_free,
             "queue_running": queue_running,
@@ -79,11 +77,13 @@ async def get_server_data(session, server):
             "current_task": current_task,
             "status": status,
             "last_update": last_update,
-            "device_name": f"RTX {device_name}"
+            "device_name": f"RTX {device_name}",
+            "python_version": python_version
         }
     except Exception as e:
         print(f"Error connecting to server {server}: {str(e)}")
         return None
+
 async def get_all_server_data(servers):
     async with aiohttp.ClientSession() as session:
         tasks = []
@@ -93,10 +93,7 @@ async def get_all_server_data(servers):
         server_data = await asyncio.gather(*tasks)
         return [data for data in server_data if data is not None]
 
-def update_data(table_placeholder):
-    # Sunucu listesini dosyadan yükle
-    servers = load_servers()
-
+def update_data(servers):
     server_data = asyncio.run(get_all_server_data(servers))
 
     if len(server_data) > 0:
@@ -104,25 +101,26 @@ def update_data(table_placeholder):
         table_data = []
         for data in server_data:
             table_data.append([
-                data["port"],
+                data["server"],
                 f"{data['vram_total']} GB",
                 f"{data['vram_free']} GB",
                 data["queue_running"],
                 data["queue_pending"],
                 data["current_task"],
                 data["device_name"],
+                data["python_version"],
                 humanize_time_difference(data["last_update"]),
                 data["status"]
             ])
 
         # Tablo başlıklarını belirle
-        headers = ["Port", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Update", "Status"]
+        headers = ["Server", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Python", "Update", "Status"]
 
-        # Tabloyu güncelle
-        table_placeholder.table(pd.DataFrame(table_data, columns=headers))
+        # Tabloyu görüntüle
+        st.table(pd.DataFrame(table_data, columns=headers))
     else:
-        table_placeholder.warning("No server data available.")
-        
+        st.warning("No server data available.")
+
 def add_servers():
     if st.button("Add Server"):
         with st.form("add_server_form"):
@@ -139,15 +137,17 @@ def add_servers():
 def main():
     st.title("ComfyUI Server Monitor")
 
+    # Sunucu listesini dosyadan yükle
+    servers = load_servers()
+
     # Sunucu ekleme butonunu görüntüle
     add_servers()
 
-    table_placeholder = st.empty()  # table_placeholder değişkenini tanımla
+    if st.button('Update'):
+        update_data(servers)
 
-    # Verileri belirli aralıklarla güncelle
-    while True:
-        update_data(table_placeholder)
-        time.sleep(REFRESH_INTERVAL)
+    # İlk yükleme sırasında verileri güncelle
+    update_data(servers)
 
 if __name__ == "__main__":
     main()
