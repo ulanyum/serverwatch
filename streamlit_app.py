@@ -39,6 +39,9 @@ def humanize_time_difference(update_time):
 
 async def get_server_data(session, server):
     try:
+        # Port numarasını al
+        port = server.split(":")[-1]
+
         # /system_stats endpoint'inden veri al
         async with session.get(f"http://{server}/system_stats", ssl=False) as resp:
             stats_data = await resp.json()
@@ -51,7 +54,6 @@ async def get_server_data(session, server):
                 device_name = device_name_full.split("RXT")[1][:6].strip()
             else:
                 device_name = device_name_full
-            python_version = stats_data["system"]["python_version"].split(" ")[0]
 
         # /queue endpoint'inden veri al
         async with session.get(f"http://{server}/queue", ssl=False) as resp:
@@ -69,7 +71,7 @@ async def get_server_data(session, server):
         last_update = datetime.now()
 
         return {
-            "server": server,
+            "port": port,
             "vram_total": vram_total,
             "vram_free": vram_free,
             "queue_running": queue_running,
@@ -77,8 +79,7 @@ async def get_server_data(session, server):
             "current_task": current_task,
             "status": status,
             "last_update": last_update,
-            "device_name": f"RTX {device_name}",
-            "python_version": python_version
+            "device_name": f"RTX {device_name}"
         }
     except Exception as e:
         print(f"Error connecting to server {server}: {str(e)}")
@@ -101,20 +102,19 @@ def update_data(servers):
         table_data = []
         for data in server_data:
             table_data.append([
-                data["server"],
+                data["port"],
                 f"{data['vram_total']} GB",
                 f"{data['vram_free']} GB",
                 data["queue_running"],
                 data["queue_pending"],
                 data["current_task"],
                 data["device_name"],
-                data["python_version"],
                 humanize_time_difference(data["last_update"]),
                 data["status"]
             ])
 
         # Tablo başlıklarını belirle
-        headers = ["Server", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Python", "Update", "Status"]
+        headers = ["Port", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Update", "Status"]
 
         # Tabloyu görüntüle
         st.table(pd.DataFrame(table_data, columns=headers))
