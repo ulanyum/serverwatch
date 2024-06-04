@@ -8,7 +8,7 @@ import time
 import os
 
 SERVERS_FILE = "servers.json"
-REFRESH_INTERVAL = 60  # Otomatik yenilenme aralığı (saniye)
+REFRESH_INTERVAL = 15  # Veri güncelleme aralığı (saniye)
 
 def load_servers():
     if os.path.exists(SERVERS_FILE):
@@ -142,14 +142,12 @@ def main():
     add_servers()
 
     if st.button('Update'):
-        st.experimental_rerun()
+        update_data()
 
-    # Verileri güncelle
-    update_data()
-
-    # Otomatik yenilenme
-    st.experimental_rerun()
-    time.sleep(REFRESH_INTERVAL)
+    # Verileri belirli aralıklarla güncelle
+    while True:
+        update_data()
+        time.sleep(REFRESH_INTERVAL)
 
 if __name__ == "__main__":
     main()
