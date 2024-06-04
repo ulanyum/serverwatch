@@ -59,11 +59,8 @@ async def get_server_data(session, server):
         # /queue endpoint'inden veri al
         async with session.get(f"http://{server}/queue", ssl=False) as resp:
             queue_data = await resp.json()
-            queue_running = len(queue_data["queue_running"])
+            queue_running = queue_data["queue_running"]
             queue_pending = len(queue_data["queue_pending"])
-            current_task = ""
-            if queue_running > 0 and "extra_pnginfo" in queue_data["queue_running"][0][2]:
-                current_task = queue_data["queue_running"][0][2]["extra_pnginfo"]["workflow"]["nodes"][-1]["widgets_values"][0]
 
         # Sunucunun durumunu kontrol et
         status = "🟢 Online" if resp.status == 200 else "🔴 Offline"
@@ -74,7 +71,6 @@ async def get_server_data(session, server):
             "vram_free": vram_free,
             "queue_running": queue_running,
             "queue_pending": queue_pending,
-            "current_task": current_task,
             "status": status,
             "last_update": datetime.now(),
             "device_name": f"RTX {device_name}"
@@ -102,20 +98,27 @@ def update_data(table_placeholder):
         # Streamlit tablosunu oluştur
         table_data = []
         for data in server_data:
-            table_data.append([
-                data["port"],
-                f"{data['vram_total']} GB",
-                f"{data['vram_free']} GB",
-                data["queue_running"],
-                data["queue_pending"],
-                data["current_task"],
-                data["device_name"],
-                humanize_time_difference(data["last_update"]),
-                data["status"]
-            ])
+            for task in data["queue_running"]:
+                task_id = task[0]
+                task_start_time = datetime.fromtimestamp(task[1])
+                task_params = task[2].get("extra_pnginfo", {}).get("workflow", {}).get("nodes", [])
+                current_task = task_params[-1]["widgets_values"][0] if task_params else ""
+
+                table_data.append([
+                    data["port"],
+                    f"{data['vram_total']} GB",
+                    f"{data['vram_free']} GB",
+                    task_id,
+                    task_start_time,
+                    current_task,
+                    data["queue_pending"],
+                    data["device_name"],
+                    humanize_time_difference(data["last_update"]),
+                    data["status"]
+                ])
 
         # Tablo başlıklarını belirle
-        headers = ["Port", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Update", "Status"]
+        headers = ["Port", "Total VRAM", "Free VRAM", "Task ID", "Task Start", "Current Task", "Pending", "Device", "Update", "Status"]
 
         # Tabloyu güncelle
         table_placeholder.table(pd.DataFrame(table_data, columns=headers))
