@@ -8,7 +8,7 @@ import time
 import os
 
 SERVERS_FILE = "servers.json"
-REFRESH_INTERVAL = 30  # Veri güncelleme aralığı (saniye)
+REFRESH_INTERVAL = 15  # Veri güncelleme aralığı (saniye)
 
 def load_servers():
     if os.path.exists(SERVERS_FILE):
@@ -92,7 +92,7 @@ async def get_all_server_data(servers):
         server_data = await asyncio.gather(*tasks)
         return [data for data in server_data if data is not None]
 
-def update_data(table_placeholder):
+def update_data():
     # Sunucu listesini dosyadan yükle
     servers = load_servers()
 
@@ -117,10 +117,10 @@ def update_data(table_placeholder):
         # Tablo başlıklarını belirle
         headers = ["Port", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Update", "Status"]
 
-        # Tabloyu güncelle
-        table_placeholder.table(pd.DataFrame(table_data, columns=headers))
+        # Tabloyu görüntüle
+        st.table(pd.DataFrame(table_data, columns=headers))
     else:
-        table_placeholder.warning("No server data available.")
+        st.warning("No server data available.")
 
 def add_servers():
     if st.button("Add Server"):
@@ -142,15 +142,11 @@ def main():
     add_servers()
 
     if st.button('Update'):
-        table_placeholder.empty()
-        update_data(table_placeholder)
-
-    # Tablo için yer tutucu oluştur
-    table_placeholder = st.empty()
+        update_data()
 
     # Verileri belirli aralıklarla güncelle
     while True:
-        update_data(table_placeholder)
+        update_data()
         time.sleep(REFRESH_INTERVAL)
 
 if __name__ == "__main__":
