@@ -8,6 +8,7 @@ import time
 import os
 
 SERVERS_FILE = "servers.json"
+REFRESH_INTERVAL = 30  # Veri güncelleme aralığı (saniye)
 
 def load_servers():
     if os.path.exists(SERVERS_FILE):
@@ -39,6 +40,9 @@ def humanize_time_difference(update_time):
 
 async def get_server_data(session, server):
     try:
+        # Port numarasını al
+        port = server.split(":")[-1]
+
         # /system_stats endpoint'inden veri al
         async with session.get(f"http://{server}/system_stats", ssl=False) as resp:
             stats_data = await resp.json()
@@ -51,39 +55,30 @@ async def get_server_data(session, server):
                 device_name = device_name_full.split("RXT")[1][:6].strip()
             else:
                 device_name = device_name_full
-            python_version = stats_data["system"]["python_version"].split(" ")[0]
 
         # /queue endpoint'inden veri al
         async with session.get(f"http://{server}/queue", ssl=False) as resp:
             queue_data = await resp.json()
-            queue_running = len(queue_data["queue_running"])
+            queue_running = queue_data["queue_running"]
             queue_pending = len(queue_data["queue_pending"])
-            current_task = ""
-            if queue_running > 0 and "extra_pnginfo" in queue_data["queue_running"][0][2]:
-                current_task = queue_data["queue_running"][0][2]["extra_pnginfo"]["workflow"]["nodes"][-1]["widgets_values"][0]
 
         # Sunucunun durumunu kontrol et
         status = "🟢 Online" if resp.status == 200 else "🔴 Offline"
 
-        # Son güncelleme zamanını al
-        last_update = datetime.now()
-
         return {
-            "server": server,
+            "port": port,
             "vram_total": vram_total,
             "vram_free": vram_free,
             "queue_running": queue_running,
             "queue_pending": queue_pending,
-            "current_task": current_task,
             "status": status,
-            "last_update": last_update,
-            "device_name": f"RTX {device_name}",
-            "python_version": python_version
+            "last_update": datetime.now(),
+            "device_name": f"RTX {device_name}"
         }
     except Exception as e:
         print(f"Error connecting to server {server}: {str(e)}")
         return None
-        
+
 async def get_all_server_data(servers):
     async with aiohttp.ClientSession() as session:
         tasks = []
@@ -93,33 +88,42 @@ async def get_all_server_data(servers):
         server_data = await asyncio.gather(*tasks)
         return [data for data in server_data if data is not None]
 
-def update_data(servers):
+def update_data(table_placeholder):
+    # Sunucu listesini dosyadan yükle
+    servers = load_servers()
+
     server_data = asyncio.run(get_all_server_data(servers))
 
     if len(server_data) > 0:
         # Streamlit tablosunu oluştur
         table_data = []
         for data in server_data:
-            table_data.append([
-                data["server"],
-                f"{data['vram_total']} GB",
-                f"{data['vram_free']} GB",
-                data["queue_running"],
-                data["queue_pending"],
-                data["current_task"],
-                data["device_name"],
-                data["python_version"],
-                humanize_time_difference(data["last_update"]),
-                data["status"]
-            ])
+            for task in data["queue_running"]:
+                task_id = task[0]
+                task_start_time = datetime.fromtimestamp(task[1])
+                task_params = task[2].get("extra_pnginfo", {}).get("workflow", {}).get("nodes", [])
+                current_task = task_params[-1]["widgets_values"][0] if task_params else ""
+
+                table_data.append([
+                    data["port"],
+                    f"{data['vram_total']} GB",
+                    f"{data['vram_free']} GB",
+                    task_id,
+                    task_start_time,
+                    current_task,
+                    data["queue_pending"],
+                    data["device_name"],
+                    humanize_time_difference(data["last_update"]),
+                    data["status"]
+                ])
 
         # Tablo başlıklarını belirle
-        headers = ["Server", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Python", "Update", "Status"]
+        headers = ["Port", "Total VRAM", "Free VRAM", "Task ID", "Task Start", "Current Task", "Pending", "Device", "Update", "Status"]
 
-        # Tabloyu görüntüle
-        st.table(pd.DataFrame(table_data, columns=headers))
+        # Tabloyu güncelle
+        table_placeholder.table(pd.DataFrame(table_data, columns=headers))
     else:
-        st.warning("No server data available.")
+        table_placeholder.warning("No server data available.")
 
 def add_servers():
     if st.button("Add Server"):
@@ -137,17 +141,20 @@ def add_servers():
 def main():
     st.title("ComfyUI Server Monitor")
 
-    # Sunucu listesini dosyadan yükle
-    servers = load_servers()
-
     # Sunucu ekleme butonunu görüntüle
     add_servers()
 
     if st.button('Update'):
-        update_data(servers)
+        table_placeholder.empty()
+        update_data(table_placeholder)
 
-    # İlk yükleme sırasında verileri güncelle
-    update_data(servers)
+    # Tablo için yer tutucu oluştur
+    table_placeholder = st.empty()
+
+    # Verileri belirli aralıklarla güncelle
+    while True:
+        update_data(table_placeholder)
+        time.sleep(REFRESH_INTERVAL)
 
 if __name__ == "__main__":
     main()
