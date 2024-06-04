@@ -42,6 +42,9 @@ async def get_server_data(session, server):
         # Port numarasını al
         port = server.split(":")[-1]
 
+        # Son güncelleme zamanını al
+        last_update = datetime.now()
+
         # /system_stats endpoint'inden veri al
         async with session.get(f"http://{server}/system_stats", ssl=False) as resp:
             stats_data = await resp.json()
@@ -67,9 +70,6 @@ async def get_server_data(session, server):
         # Sunucunun durumunu kontrol et
         status = "🟢 Online" if resp.status == 200 else "🔴 Offline"
 
-        # Son güncelleme zamanını al
-        last_update = datetime.fromtimestamp(stats_data["last_update"])
-
         return {
             "port": port,
             "vram_total": vram_total,
@@ -84,6 +84,7 @@ async def get_server_data(session, server):
     except Exception as e:
         print(f"Error connecting to server {server}: {str(e)}")
         return None
+
 async def get_all_server_data(servers):
     async with aiohttp.ClientSession() as session:
         tasks = []
