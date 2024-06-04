@@ -8,6 +8,7 @@ import time
 import os
 
 SERVERS_FILE = "servers.json"
+REFRESH_INTERVAL = 60  # Otomatik yenilenme aralığı (saniye)
 
 def load_servers():
     if os.path.exists(SERVERS_FILE):
@@ -42,9 +43,6 @@ async def get_server_data(session, server):
         # Port numarasını al
         port = server.split(":")[-1]
 
-        # Son güncelleme zamanını al
-        last_update = datetime.now()
-
         # /system_stats endpoint'inden veri al
         async with session.get(f"http://{server}/system_stats", ssl=False) as resp:
             stats_data = await resp.json()
@@ -78,7 +76,7 @@ async def get_server_data(session, server):
             "queue_pending": queue_pending,
             "current_task": current_task,
             "status": status,
-            "last_update": last_update,
+            "last_update": datetime.now(),
             "device_name": f"RTX {device_name}"
         }
     except Exception as e:
@@ -144,10 +142,14 @@ def main():
     add_servers()
 
     if st.button('Update'):
-        update_data()
+        st.experimental_rerun()
 
-    # İlk yükleme sırasında verileri güncelle
+    # Verileri güncelle
     update_data()
+
+    # Otomatik yenilenme
+    st.experimental_rerun()
+    time.sleep(REFRESH_INTERVAL)
 
 if __name__ == "__main__":
     main()
