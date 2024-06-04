@@ -142,11 +142,12 @@ def main():
     # Sunucu ekleme butonunu görüntüle
     add_servers()
 
-    if st.button('Update'):
-        update_data()
+    table_placeholder = st.empty()  # table_placeholder değişkenini tanımla
 
-    # İlk yükleme sırasında verileri güncelle
-    update_data()
+    # Verileri belirli aralıklarla güncelle
+    while True:
+        update_data(table_placeholder)
+        time.sleep(REFRESH_INTERVAL)
 
 if __name__ == "__main__":
     main()
