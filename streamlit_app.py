@@ -94,7 +94,10 @@ async def get_all_server_data(servers):
         server_data = await asyncio.gather(*tasks)
         return [data for data in server_data if data is not None]
 
-def update_data(servers):
+def update_data():
+    # Sunucu listesini dosyadan yükle
+    servers = load_servers()
+
     server_data = asyncio.run(get_all_server_data(servers))
 
     if len(server_data) > 0:
