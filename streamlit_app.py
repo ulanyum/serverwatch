@@ -106,4 +106,10 @@ def main():
     st.title("ComfyUI Server Monitor")
 
     server_input = st.text_area("Enter server addresses (one per line)")
-    servers = [server.strip() for server in server_input
+    servers = [server.strip() for server in server_input.split("\n") if server.strip()]
+
+    if st.button('Güncelle'):
+        update_data(servers)
+
+if __name__ == "__main__":
+    main()
