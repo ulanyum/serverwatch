@@ -164,4 +164,4 @@ def main():
 
     # Sunucu ayrıntı sayfasını göster
     query_params = st.experimental_get_query_params()
-    if 'server' in query_
+    if 'server' in query_:
