@@ -1,10 +1,8 @@
 import asyncio
 import aiohttp
-import json
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
-import time
+from datetime import datetime
 
 def humanize_time_difference(update_time):
     now = datetime.now()
@@ -25,8 +23,9 @@ def humanize_time_difference(update_time):
 
 async def get_server_data(session, server):
     try:
-        # /system_stats endpoint'inden veri al
         async with session.get(f"http://{server}/system_stats", ssl=False) as resp:
+            if resp.status != 200:
+                return None
             stats_data = await resp.json()
             vram_total = round(stats_data["devices"][0]["vram_total"] / (1024 ** 3), 2)
             vram_free = round(stats_data["devices"][0]["vram_free"] / (1024 ** 3), 2)
@@ -39,8 +38,9 @@ async def get_server_data(session, server):
                 device_name = device_name_full
             python_version = stats_data["system"]["python_version"].split(" ")[0]
 
-        # /queue endpoint'inden veri al
         async with session.get(f"http://{server}/queue", ssl=False) as resp:
+            if resp.status != 200:
+                return None
             queue_data = await resp.json()
             queue_running = len(queue_data["queue_running"])
             queue_pending = len(queue_data["queue_pending"])
@@ -48,10 +48,7 @@ async def get_server_data(session, server):
             if queue_running > 0 and "extra_pnginfo" in queue_data["queue_running"][0][2]:
                 current_task = queue_data["queue_running"][0][2]["extra_pnginfo"]["workflow"]["nodes"][-1]["widgets_values"][0]
 
-        # Sunucunun durumunu kontrol et
         status = "🟢 Online" if resp.status == 200 else "🔴 Offline"
-
-        # Son güncelleme zamanını al
         last_update = datetime.now()
 
         return {
@@ -72,18 +69,14 @@ async def get_server_data(session, server):
 
 async def get_all_server_data(servers):
     async with aiohttp.ClientSession() as session:
-        tasks = []
-        for server in servers:
-            tasks.append(asyncio.ensure_future(get_server_data(session, server)))
-
+        tasks = [get_server_data(session, server) for server in servers]
         server_data = await asyncio.gather(*tasks)
         return [data for data in server_data if data is not None]
 
 def update_data(servers):
     server_data = asyncio.run(get_all_server_data(servers))
 
-    if len(server_data) > 0:
-        # Streamlit tablosunu oluştur
+    if server_data:
         table_data = []
         for data in server_data:
             table_data.append([
@@ -99,10 +92,7 @@ def update_data(servers):
                 data["status"]
             ])
 
-        # Tablo başlıklarını belirle
         headers = ["Server", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Python", "Update", "Status"]
-
-        # Tabloyu görüntüle
         st.table(pd.DataFrame(table_data, columns=headers))
     else:
         st.warning("No server data available.")
@@ -110,4 +100,11 @@ def update_data(servers):
 def main():
     st.title("ComfyUI Server Monitor")
 
-    # Sunucu
+    server_input = st.text_area("Enter server addresses (one per line)")
+    servers = [server.strip() for server in server_input.split("\n") if server.strip()]
+
+    if st.button('Güncelle'):
+        update_data(servers)
+
+if __name__ == "__main__":
+    main()
