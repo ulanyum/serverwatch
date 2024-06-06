@@ -83,8 +83,8 @@ def get_all_server_data(servers):
     return asyncio.run(get_all_server_data_async(servers))
 
 def display_server_details(server_data):
-  st.header(f"Server Details")
-
+    st.header(f"Server Details")
+    
     # Sunucu bilgilerini göster
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Status", server_data['status'])
