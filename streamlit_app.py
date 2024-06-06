@@ -25,6 +25,7 @@ async def get_server_data(session, server):
     try:
         async with session.get(f"http://{server}/system_stats", ssl=False) as resp:
             if resp.status != 200:
+                st.error(f"Failed to fetch system stats from {server}. Status code: {resp.status}")
                 return None
             stats_data = await resp.json()
             vram_total = round(stats_data["devices"][0]["vram_total"] / (1024 ** 3), 2)
@@ -39,6 +40,7 @@ async def get_server_data(session, server):
 
         async with session.get(f"http://{server}/queue", ssl=False) as resp:
             if resp.status != 200:
+                st.error(f"Failed to fetch queue data from {server}. Status code: {resp.status}")
                 return None
             queue_data = await resp.json()
             queue_running = len(queue_data["queue_running"])
@@ -69,7 +71,7 @@ async def get_server_data(session, server):
             "device_name": f"RTX {device_name}",
         }
     except Exception as e:
-        print(f"Error connecting to server {server}: {str(e)}")
+        st.error(f"Error connecting to server {server}: {str(e)}")
         return None
 
 async def get_all_server_data(servers):
@@ -97,16 +99,4 @@ def update_data(servers):
                 data["workflow"]  # Workflow bilgisini de ekleyelim
             ])
 
-        headers = ["Port", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Update", "Status", "Workflow"]
-        st.table(pd.DataFrame(table_data, columns=headers))
-    else:
-        st.warning("No server data available.")
-
-def main():
-    st.title("ComfyUI Server Monitor")
-
-    server_input = st.text_area("Enter server addresses (one per line)")
-    servers = [server.strip() for server in server_input.split("\n") if server.strip()]
-
-    if st.button('Güncelle'):
-        update_data
+        headers = ["Port", "
