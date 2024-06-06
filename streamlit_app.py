@@ -165,3 +165,9 @@ def main():
     # Sunucu ayrıntı sayfasını göster
     query_params = st.experimental_get_query_params()
     if 'server' in query_params:
+    # Do something here
+    # For example:
+    server = query_params['server'][0]
+    # Fetch and display server details
+    server_data = get_server_data_by_port(server)
+    display_server_details(server_data)
