@@ -3,7 +3,6 @@ import aiohttp
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import time
 import altair as alt
 
 def humanize_time_difference(update_time):
@@ -127,23 +126,9 @@ def update_data(servers):
     server_data = get_all_server_data(servers)
 
     if server_data:
-        table_data = []
         for data in server_data:
-            table_data.append([
-                f"<a href='?server={data['port']}'>{data['port']}</a>",
-                f"{data['vram_total']} GB",
-                f"{data['vram_free']} GB",
-                data["queue_running"],
-                data["queue_pending"],
-                data["current_task"],
-                data["device_name"],
-                humanize_time_difference(data["last_update"]),
-                data["status"],
-                data["workflow"]
-            ])
-
-        headers = ["Port", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Update", "Status", "Workflow"]
-        st.markdown(pd.DataFrame(table_data, columns=headers).to_html(escape=False, index=False), unsafe_allow_html=True)
+            with st.expander(f"Server Details - Port: {data['port']}"):  # Expander başlangıcı
+                display_server_details(data)  # Detaylar expander içinde gösteriliyor
     else:
         st.warning("No server data available.")
 
@@ -161,15 +146,6 @@ def main():
         st.experimental_rerun()
 
     update_data(st.session_state.servers)
-
-    # Sunucu ayrıntı sayfasını göster
-    query_params = st.experimental_get_query_params()
-    if 'server' in query_params:
-        server_port = query_params["server"][0]
-        for data in server_data:
-            if data['port'] == server_port:
-                display_server_details(data)
-                break
 
 if __name__ == "__main__":
     main()
