@@ -105,11 +105,18 @@ def update_data(servers):
 def main():
     st.title("ComfyUI Server Monitor")
 
-    server_input = st.text_area("Enter server addresses (one per line)")
+    if "servers" not in st.session_state:
+        st.session_state.servers = []
+
+    server_input = st.text_area("Enter server addresses (one per line)", value="\n".join(st.session_state.servers))
     servers = [server.strip() for server in server_input.split("\n") if server.strip()]
 
-    if st.button('Güncelle'):
-        update_data(servers)
+    if st.button("Add Servers"):
+        st.session_state.servers = servers
+        st.experimental_rerun()
+
+    if st.button('Update'):
+        update_data(st.session_state.servers)
 
 if __name__ == "__main__":
     main()
