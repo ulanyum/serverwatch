@@ -47,16 +47,9 @@ async def get_server_data(session, server):
             queue_pending = len(queue_data["queue_pending"])
             current_task = ""
             workflow = ""
-            
-            # Eğer queue_running boş değilse ve "extra_pnginfo" mevcutsa
             if queue_running > 0 and "extra_pnginfo" in queue_data["queue_running"][0][2]:
-                extra_pnginfo = queue_data["queue_running"][0][2]["extra_pnginfo"]
-                if "workflow" in extra_pnginfo:
-                    workflow = extra_pnginfo["workflow"]
-                if "nodes" in extra_pnginfo["workflow"]:
-                    nodes = extra_pnginfo["workflow"]["nodes"]
-                    if nodes and "widgets_values" in nodes[-1] and nodes[-1]["widgets_values"]:
-                        current_task = nodes[-1]["widgets_values"][0]
+                current_task = queue_data["queue_running"][0][2]["extra_pnginfo"]["workflow"]["nodes"][-1]["widgets_values"][0]
+                workflow = queue_data["queue_running"][0][2]["extra_pnginfo"]["workflow"]
 
         status = "🟢 Online" if resp.status == 200 else "🔴 Offline"
         last_update = datetime.now()
@@ -107,4 +100,16 @@ def update_data(servers):
         headers = ["Port", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Update", "Status", "Workflow"]
         st.table(pd.DataFrame(table_data, columns=headers))
     else:
-        st
+        st.warning("No server data available.")
+
+def main():
+    st.title("ComfyUI Server Monitor")
+
+    server_input = st.text_area("Enter server addresses (one per line)")
+    servers = [server.strip() for server in server_input.split("\n") if server.strip()]
+
+    if st.button('Güncelle'):
+        update_data(servers)
+
+if __name__ == "__main__":
+    main()
