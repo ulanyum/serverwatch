@@ -83,12 +83,18 @@ def get_all_server_data(servers):
     return asyncio.run(get_all_server_data_async(servers))
 
 def display_server_details(server_data):
-    st.header(f"Server Details - Port: {server_data['port']}")
+  st.header(f"Server Details")
 
     # Sunucu bilgilerini göster
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Status", server_data['status'])
+    col2.metric("GPU Temperature", f"{server_data['gpu_temperature']}°C")
+    col3.metric("Pending", server_data['queue_pending'])
+    col4.metric("Running", server_data['queue_running'])
+
     st.subheader("Server Information")
     st.write(f"- Device: {server_data['device_name']}")
-    st.write(f"- Status: {server_data['status']}")
+    st.write(f"- Port: {server_data['port']}")
     st.write(f"- Last Update: {humanize_time_difference(server_data['last_update'])} ago")
 
     # VRAM kullanımını göster
@@ -127,10 +133,11 @@ def update_data(servers):
 
     if server_data:
         for data in server_data:
-            with st.expander(f"Server Details - Port: {data['port']}"):  # Expander başlangıcı
-                display_server_details(data)  # Detaylar expander içinde gösteriliyor
+            with st.expander(f"Server Details - Port: {data['port']}"): 
+                display_server_details(data) 
     else:
         st.warning("No server data available.")
+
 
 def main():
     st.title("ComfyUI Server Monitor")
