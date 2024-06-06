@@ -110,15 +110,4 @@ def update_data(servers):
 def main():
     st.title("ComfyUI Server Monitor")
 
-    # Sunucu listesini metin giriş alanından al
-    server_input = st.text_area("Enter server addresses (one per line)")
-    servers = [server.strip() for server in server_input.split("\n") if server.strip()]
-
-    if st.button('Güncelle'):
-        update_data(servers)
-
-    # İlk yükleme sırasında verileri güncelle
-    update_data(servers)
-
-if __name__ == "__main__":
-    main()
+    # Sunucu
