@@ -108,4 +108,4 @@ def main():
     server_input = st.text_area("Enter server addresses (one per line)")
     servers = [server.strip() for server in server_input.split("\n") if server.strip()]
 
-    if st.button('Güncelle'):
+    if st.button
