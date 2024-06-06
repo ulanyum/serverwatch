@@ -84,9 +84,9 @@ def get_all_server_data(servers):
 
 def display_server_details(server_data):
     st.header(f"Server Details")
-    
+
     # Sunucu bilgilerini göster
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4 = st.columns(4) # <-- Bu satırın girintisi düzeltildi
     col1.metric("Status", server_data['status'])
     col2.metric("GPU Temperature", f"{server_data['gpu_temperature']}°C")
     col3.metric("Pending", server_data['queue_pending'])
