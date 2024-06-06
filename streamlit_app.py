@@ -107,4 +107,7 @@ def update_data(servers):
         headers = ["Port", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Update", "Status", "Workflow"]
         st.table(pd.DataFrame(table_data, columns=headers))
     else:
-        st.warning("No server data
+        st.warning("No server data available.")
+
+def main():
+    st.title("ComfyUI Server Monitor")
