@@ -4,6 +4,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import time
+import altair as alt
 
 def humanize_time_difference(update_time):
     now = datetime.now()
@@ -82,6 +83,46 @@ def get_all_server_data(servers):
 
     return asyncio.run(get_all_server_data_async(servers))
 
+def display_server_details(server_data):
+    st.header(f"Server Details - Port: {server_data['port']}")
+
+    # Sunucu bilgilerini göster
+    st.subheader("Server Information")
+    st.write(f"- Device: {server_data['device_name']}")
+    st.write(f"- Status: {server_data['status']}")
+    st.write(f"- Last Update: {humanize_time_difference(server_data['last_update'])} ago")
+
+    # VRAM kullanımını göster
+    st.subheader("VRAM Usage")
+    vram_data = pd.DataFrame({
+        'VRAM (GB)': [server_data['vram_total'] - server_data['vram_free'], server_data['vram_free']],
+        'Type': ['Used', 'Free']
+    })
+    vram_chart = alt.Chart(vram_data).mark_bar().encode(
+        x=alt.X('VRAM (GB)'),
+        y=alt.Y('Type', sort=alt.EncodingSortField(field='VRAM (GB)', order='descending')),
+        color=alt.Color('Type', scale=alt.Scale(range=['#FF5733', '#36A2EB']))
+    )
+    st.altair_chart(vram_chart, use_container_width=True)
+
+    # Kuyruk durumunu göster
+    st.subheader("Queue Status")
+    queue_data = pd.DataFrame({
+        'Queue': ['Running', 'Pending'],
+        'Count': [server_data['queue_running'], server_data['queue_pending']]
+    })
+    queue_chart = alt.Chart(queue_data).mark_bar().encode(
+        x=alt.X('Count'),
+        y=alt.Y('Queue'),
+        color=alt.Color('Queue', scale=alt.Scale(range=['#36A2EB', '#FFCE56']))
+    )
+    st.altair_chart(queue_chart, use_container_width=True)
+
+    # Geçerli görevi ve iş akışını göster
+    st.subheader("Current Task")
+    st.write(f"- Task: {server_data['current_task']}")
+    st.write(f"- Workflow: {server_data['workflow']}")
+
 def update_data(servers):
     server_data = get_all_server_data(servers)
 
@@ -89,7 +130,7 @@ def update_data(servers):
         table_data = []
         for data in server_data:
             table_data.append([
-                data["port"],
+                f"<a href='?server={data['port']}'>{data['port']}</a>",
                 f"{data['vram_total']} GB",
                 f"{data['vram_free']} GB",
                 data["queue_running"],
@@ -102,7 +143,7 @@ def update_data(servers):
             ])
 
         headers = ["Port", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Update", "Status", "Workflow"]
-        st.table(pd.DataFrame(table_data, columns=headers))
+        st.markdown(pd.DataFrame(table_data, columns=headers).to_html(escape=False, index=False), unsafe_allow_html=True)
     else:
         st.warning("No server data available.")
 
@@ -121,21 +162,6 @@ def main():
 
     update_data(st.session_state.servers)
 
-    # Otomatik güncelleme
-    if "last_update" not in st.session_state:
-        st.session_state.last_update = datetime.now()
-
-    if (datetime.now() - st.session_state.last_update).total_seconds() >= 10:
-        st.session_state.last_update = datetime.now()
-        st.experimental_rerun()
-
-    # Sonraki güncellemeye kalan süreyi göster
-    next_update = st.session_state.last_update + pd.Timedelta(seconds=10)
-    time_left = next_update - datetime.now()
-    st.write(f"Next update in {time_left.seconds} seconds")
-
-    # Sayfa yenilenmesini engelle
-    time.sleep(1)
-
-if __name__ == "__main__":
-    main()
+    # Sunucu ayrıntı sayfasını göster
+    query_params = st.experimental_get_query_params()
+    if 'server' in query_
