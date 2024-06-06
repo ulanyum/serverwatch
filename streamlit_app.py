@@ -32,6 +32,9 @@ async def get_server_data(session, server):
             vram_total = round(stats_data["devices"][0]["vram_total"] / (1024 ** 3), 2)
             vram_free = round(stats_data["devices"][0]["vram_free"] / (1024 ** 3), 2)
             device_name_full = stats_data["devices"][0]["name"]
+            # GPU sıcaklığını alıyoruz
+            gpu_temperature = stats_data["devices"][0]["gpu_temperature"] # <-- Bu satırı ekledik
+
             if "RTX" in device_name_full:
                 device_name = device_name_full.split("RTX")[1][:6].strip()
             elif "RXT" in device_name_full:
@@ -68,6 +71,8 @@ async def get_server_data(session, server):
             "status": status,
             "last_update": last_update,
             "device_name": f"RTX {device_name}",
+            "gpu_temperature": gpu_temperature  # <-- GPU sıcaklığını ekliyoruz
+
         }
     except Exception as e:
         st.error(f"Error connecting to server {server}: {str(e)}")
