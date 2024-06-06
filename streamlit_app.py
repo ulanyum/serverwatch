@@ -49,13 +49,11 @@ async def get_server_data(session, server):
             workflow = ""
             if queue_running > 0 and "extra_pnginfo" in queue_data["queue_running"][0][2]:
                 current_task = queue_data["queue_running"][0][2]["extra_pnginfo"]["workflow"]["nodes"][-1]["widgets_values"][0]
-                # Workflow bilgilerini al
                 workflow = queue_data["queue_running"][0][2]["extra_pnginfo"]["workflow"]
 
         status = "🟢 Online" if resp.status == 200 else "🔴 Offline"
         last_update = datetime.now()
 
-        # Sunucu adresinden port numarasını çıkar
         port = server.split(":")[-1]
 
         return {
@@ -96,7 +94,7 @@ def update_data(servers):
                 data["device_name"],
                 humanize_time_difference(data["last_update"]),
                 data["status"],
-                data["workflow"]  # Workflow bilgisini de ekleyelim
+                data["workflow"]
             ])
 
         headers = ["Port", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Update", "Status", "Workflow"]
@@ -107,4 +105,7 @@ def update_data(servers):
 def main():
     st.title("ComfyUI Server Monitor")
 
-    server_input = st.text_area("
+    server_input = st.text_area("Enter server addresses (one per line)")
+    servers = [server.strip() for server in server_input.split("\n") if server.strip()]
+
+    if st.button('Güncelle'):
