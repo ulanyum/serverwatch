@@ -3,7 +3,7 @@ import aiohttp
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import altair as alt
+import time
 
 def humanize_time_difference(update_time):
     now = datetime.now()
@@ -32,9 +32,6 @@ async def get_server_data(session, server):
             vram_total = round(stats_data["devices"][0]["vram_total"] / (1024 ** 3), 2)
             vram_free = round(stats_data["devices"][0]["vram_free"] / (1024 ** 3), 2)
             device_name_full = stats_data["devices"][0]["name"]
-            # GPU sıcaklığını alıyoruz
-            gpu_temperature = stats_data["devices"][0]["gpu_temperature"] # <-- Bu satırı ekledik
-
             if "RTX" in device_name_full:
                 device_name = device_name_full.split("RTX")[1][:6].strip()
             elif "RXT" in device_name_full:
@@ -71,8 +68,6 @@ async def get_server_data(session, server):
             "status": status,
             "last_update": last_update,
             "device_name": f"RTX {device_name}",
-            "gpu_temperature": gpu_temperature  # <-- GPU sıcaklığını ekliyoruz
-
         }
     except Exception as e:
         st.error(f"Error connecting to server {server}: {str(e)}")
@@ -87,62 +82,29 @@ def get_all_server_data(servers):
 
     return asyncio.run(get_all_server_data_async(servers))
 
-def display_server_details(server_data):
-    st.header(f"Server Details")
-
-    # Sunucu bilgilerini göster
-    col1, col2, col3, col4 = st.columns(4) # <-- Bu satırın girintisi düzeltildi
-    col1.metric("Status", server_data['status'])
-    col2.metric("GPU Temperature", f"{server_data['gpu_temperature']}°C")
-    col3.metric("Pending", server_data['queue_pending'])
-    col4.metric("Running", server_data['queue_running'])
-
-    st.subheader("Server Information")
-    st.write(f"- Device: {server_data['device_name']}")
-    st.write(f"- Port: {server_data['port']}")
-    st.write(f"- Last Update: {humanize_time_difference(server_data['last_update'])} ago")
-
-    # VRAM kullanımını göster
-    st.subheader("VRAM Usage")
-    vram_data = pd.DataFrame({
-        'VRAM (GB)': [server_data['vram_total'] - server_data['vram_free'], server_data['vram_free']],
-        'Type': ['Used', 'Free']
-    })
-    vram_chart = alt.Chart(vram_data).mark_bar().encode(
-        x=alt.X('VRAM (GB)'),
-        y=alt.Y('Type', sort=alt.EncodingSortField(field='VRAM (GB)', order='descending')),
-        color=alt.Color('Type', scale=alt.Scale(range=['#FF5733', '#36A2EB']))
-    )
-    st.altair_chart(vram_chart, use_container_width=True)
-
-    # Kuyruk durumunu göster
-    st.subheader("Queue Status")
-    queue_data = pd.DataFrame({
-        'Queue': ['Running', 'Pending'],
-        'Count': [server_data['queue_running'], server_data['queue_pending']]
-    })
-    queue_chart = alt.Chart(queue_data).mark_bar().encode(
-        x=alt.X('Count'),
-        y=alt.Y('Queue'),
-        color=alt.Color('Queue', scale=alt.Scale(range=['#36A2EB', '#FFCE56']))
-    )
-    st.altair_chart(queue_chart, use_container_width=True)
-
-    # Geçerli görevi ve iş akışını göster
-    st.subheader("Current Task")
-    st.write(f"- Task: {server_data['current_task']}")
-    st.write(f"- Workflow: {server_data['workflow']}")
-
 def update_data(servers):
     server_data = get_all_server_data(servers)
 
     if server_data:
+        table_data = []
         for data in server_data:
-            with st.expander(f"Server Details - Port: {data['port']}"): 
-                display_server_details(data) 
+            table_data.append([
+                data["port"],
+                f"{data['vram_total']} GB",
+                f"{data['vram_free']} GB",
+                data["queue_running"],
+                data["queue_pending"],
+                data["current_task"],
+                data["device_name"],
+                humanize_time_difference(data["last_update"]),
+                data["status"],
+                data["workflow"]
+            ])
+
+        headers = ["Port", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Update", "Status", "Workflow"]
+        st.table(pd.DataFrame(table_data, columns=headers))
     else:
         st.warning("No server data available.")
-
 
 def main():
     st.title("ComfyUI Server Monitor")
@@ -158,6 +120,22 @@ def main():
         st.experimental_rerun()
 
     update_data(st.session_state.servers)
+
+    # Otomatik güncelleme
+    if "last_update" not in st.session_state:
+        st.session_state.last_update = datetime.now()
+
+    if (datetime.now() - st.session_state.last_update).total_seconds() >= 10:
+        st.session_state.last_update = datetime.now()
+        st.experimental_rerun()
+
+    # Sonraki güncellemeye kalan süreyi göster
+    next_update = st.session_state.last_update + pd.Timedelta(seconds=10)
+    time_left = next_update - datetime.now()
+    st.write(f"Next update in {time_left.seconds} seconds")
+
+    # Sayfa yenilenmesini engelle
+    time.sleep(1)
 
 if __name__ == "__main__":
     main()
