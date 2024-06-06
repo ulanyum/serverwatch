@@ -51,8 +51,11 @@ async def get_server_data(session, server):
         status = "🟢 Online" if resp.status == 200 else "🔴 Offline"
         last_update = datetime.now()
 
+        # Sunucu adresinden port numarasını çıkar
+        port = server.split(":")[-1]
+
         return {
-            "server": server,
+            "port": port,
             "vram_total": vram_total,
             "vram_free": vram_free,
             "queue_running": queue_running,
@@ -80,7 +83,7 @@ def update_data(servers):
         table_data = []
         for data in server_data:
             table_data.append([
-                data["server"],
+                data["port"],
                 f"{data['vram_total']} GB",
                 f"{data['vram_free']} GB",
                 data["queue_running"],
@@ -92,7 +95,7 @@ def update_data(servers):
                 data["status"]
             ])
 
-        headers = ["Server", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Python", "Update", "Status"]
+        headers = ["Port", "Total VRAM", "Free VRAM", "Running", "Pending", "Task", "Device", "Python", "Update", "Status"]
         st.table(pd.DataFrame(table_data, columns=headers))
     else:
         st.warning("No server data available.")
